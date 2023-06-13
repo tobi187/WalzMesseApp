@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:game_template/src/play_session/fortune_wheel_screen.dart';
+import 'package:game_template/src/settings/admin/admin_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
@@ -141,6 +142,10 @@ class MyApp extends StatelessWidget {
               builder: (context, state) =>
                   const SettingsScreen(key: Key('settings')),
             ),
+            GoRoute(
+              path: "admin",
+              builder: (context, state) => const AdminScreen(key: Key("admin")),
+            )
           ]),
     ],
   );
@@ -202,6 +207,7 @@ class MyApp extends StatelessWidget {
 
           return MaterialApp.router(
             title: 'Flutter Demo',
+            debugShowCheckedModeBanner: false,
             theme: ThemeData.from(
               colorScheme: ColorScheme.fromSeed(
                 seedColor: palette.darkPen,

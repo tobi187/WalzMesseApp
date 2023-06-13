@@ -51,6 +51,7 @@ class MainMenuScreen extends StatelessWidget {
               },
               child: const Text("Glücks Rad"),
             ),
+            _gap,
             FilledButton(
               onPressed: () {
                 audioController.playSfx(SfxType.buttonTap);
@@ -80,6 +81,11 @@ class MainMenuScreen extends StatelessWidget {
             FilledButton(
               onPressed: () => GoRouter.of(context).push('/settings'),
               child: const Text('Settings'),
+            ),
+            _gap,
+            FilledButton(
+              onPressed: () => GoRouter.of(context).push("/admin"),
+              child: const Text("Admin"),
             ),
             _gap,
             Padding(

@@ -8,6 +8,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_fortune_wheel/flutter_fortune_wheel.dart';
 import 'package:game_template/src/game_internals/fortune_wheel_state.dart';
+import 'package:game_template/src/settings/admin/admin_persistence.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart' hide Level;
 import 'package:provider/provider.dart';
@@ -29,6 +30,8 @@ class _FortuneWheelScreenState extends State<FortuneWheelScreen> {
 
   final _random = Random();
 
+  final data = AdminPersistance();
+
   static const _celebrationDuration = Duration(milliseconds: 2000);
 
   static const _preCelebrationDuration = Duration(milliseconds: 500);
@@ -39,7 +42,9 @@ class _FortuneWheelScreenState extends State<FortuneWheelScreen> {
 
   int _selectedItem = 0;
 
-  final _wheelItems = ["Win1", "Loose2", "Loose3", "Win4", "Loose5", "Loose6"];
+  bool hasLoaded = false;
+
+  List<String> _wheelItems = [];
 
   @override
   Widget build(BuildContext context) {
@@ -57,88 +62,107 @@ class _FortuneWheelScreenState extends State<FortuneWheelScreen> {
         ignoring: _duringCelebration,
         child: Scaffold(
           backgroundColor: palette.backgroundPlaySession,
-          body: Stack(
-            children: [
-              Center(
-                // This is the entirety of the "game".
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+          body: hasLoaded
+              ? Stack(
                   children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: InkResponse(
-                        onTap: () => GoRouter.of(context).push('/settings'),
-                        child: Image.asset(
-                          'assets/images/settings.png',
-                          semanticLabel: 'Settings',
+                    Center(
+                      // This is the entirety of the "game".
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: InkResponse(
+                              onTap: () =>
+                                  GoRouter.of(context).push('/settings'),
+                              child: Image.asset(
+                                'assets/images/settings.png',
+                                semanticLabel: 'Settings',
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Consumer<FortuneWheelState>(
+                            builder: (context, levelState, child) => Flexible(
+                              flex: 4,
+                              child: FortuneWheel(
+                                items: _wheelItems
+                                    .map(createWheelElement)
+                                    .toList(),
+                                selected: _wheelStream.stream,
+                                onFling: () {
+                                  var randNum =
+                                      _random.nextInt(_wheelItems.length);
+                                  _selectedItem = randNum;
+                                  _wheelStream.add(randNum);
+                                },
+                                animateFirst: false,
+                                onAnimationEnd: () {
+                                  _log.info(_wheelItems[_selectedItem]);
+                                  if (_wheelItems[_selectedItem]
+                                      .startsWith("Win")) {
+                                    levelState.spinFinished("a");
+                                  } else {
+                                    levelState.spinFinished(null);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: FilledButton(
+                                onPressed: () => GoRouter.of(context).go("/"),
+                                child: const Text('Back'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 50)
+                        ],
+                      ),
+                    ),
+                    SizedBox.expand(
+                      child: Visibility(
+                        visible: _duringCelebration,
+                        child: IgnorePointer(
+                          child: Confetti(
+                            isStopped: !_duringCelebration,
+                          ),
                         ),
                       ),
                     ),
-                    const Spacer(),
-                    Consumer<FortuneWheelState>(
-                      builder: (context, levelState, child) => Flexible(
-                        flex: 4,
-                        child: FortuneWheel(
-                          items: _wheelItems.map(createWheelElement).toList(),
-                          selected: _wheelStream.stream,
-                          onFling: () {
-                            var randNum = _random.nextInt(_wheelItems.length);
-                            _selectedItem = randNum;
-                            _wheelStream.add(randNum);
-                          },
-                          animateFirst: false,
-                          onAnimationEnd: () {
-                            _log.info(_wheelItems[_selectedItem]);
-                            if (_wheelItems[_selectedItem].startsWith("Win")) {
-                              levelState.spinFinished("a");
-                            } else {
-                              levelState.spinFinished(null);
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: () => GoRouter.of(context).go('/play'),
-                          child: const Text('Back'),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 50)
                   ],
-                ),
-              ),
-              SizedBox.expand(
-                child: Visibility(
-                  visible: _duringCelebration,
-                  child: IgnorePointer(
-                    child: Confetti(
-                      isStopped: !_duringCelebration,
-                    ),
+                )
+              : Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 50,
                   ),
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
+  Future<void> getItems() async {
+    _wheelItems = await data.getFortuneWheelOptions();
+    setState(() {
+      hasLoaded = true;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    getItems();
   }
 
   @override
   void dispose() {
-    super.dispose();
     _wheelStream.close();
+    super.dispose();
   }
 
   Future<void> _playerWon() async {
@@ -168,14 +192,26 @@ class _FortuneWheelScreenState extends State<FortuneWheelScreen> {
 
   FortuneItem createWheelElement(String text) {
     return FortuneItem(
-      child: Text(
-        text,
+      child: RichText(
         textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: 'Permanent Marker',
-          fontSize: 45,
-          height: 1,
-        ),
+        text: TextSpan(
+            text: text[0],
+            style: TextStyle(
+              fontFamily: 'Permanent Marker',
+              fontSize: 35,
+              height: 1,
+            ),
+            children: text.characters.indexed
+                .skip(1)
+                .map((e) => TextSpan(
+                      text: e.$2,
+                      style: TextStyle(
+                        fontFamily: 'Permanent Marker',
+                        fontSize: 35.0 + e.$1 * 7,
+                        height: 1,
+                      ),
+                    ))
+                .toList()),
       ),
     );
   }

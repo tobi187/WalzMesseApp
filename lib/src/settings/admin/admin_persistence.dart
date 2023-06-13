@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-class AdminController {
+class AdminPersistance {
   final instance = SharedPreferences.getInstance();
   static const String prefOption = "options";
 
