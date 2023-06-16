@@ -25,6 +25,7 @@ dependencies:
   # that references the dependency.
   games_services: ^3.0.0  # Achievements and leaderboards
   flutter_fortune_wheel: ^1.2.1
+  rive: ^0.11.3
 
 dev_dependencies:
   flutter_test:
@@ -40,6 +41,7 @@ flutter:
     - assets/images/
     - assets/music/
     - assets/sfx/
+    - assets/animations/
 
   fonts:
     - family: Permanent Marker

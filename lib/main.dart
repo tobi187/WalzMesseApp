@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_template/src/play_session/Robots/robots_screen.dart';
 import 'package:game_template/src/play_session/fortune_wheel_screen.dart';
 import 'package:game_template/src/settings/admin/admin_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -80,6 +81,14 @@ class MyApp extends StatelessWidget {
               pageBuilder: (context, state) => buildMyTransition(
                 key: ValueKey("playFortuneWheel"),
                 child: FortuneWheelScreen(),
+                color: context.watch<Palette>().backgroundLevelSelection,
+              ),
+            ),
+            GoRoute(
+              path: "playRobots",
+              pageBuilder: (context, state) => buildMyTransition(
+                key: ValueKey("playRobots"),
+                child: RobotScreen(),
                 color: context.watch<Palette>().backgroundLevelSelection,
               ),
             ),

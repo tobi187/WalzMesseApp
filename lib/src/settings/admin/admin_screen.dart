@@ -57,7 +57,7 @@ class _AdminScreenState extends State<AdminScreen> {
             children: [
               _gap,
               const Text(
-                'Settings',
+                'Glücksrad Felder',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Permanent Marker',
