@@ -15,14 +15,21 @@ class EditorScreen extends StatelessWidget {
     CodeItem(type: CodeType.turnRight, text: "drehe rechts")
   ];
 
-  ListTile renderCodeBlock(CodeItem item) {
+  ListTile renderCodeBlock(CodeItem item, int index) {
     final block = switch (item.type) {
-      CodeType.loop => RightCodeBlock(data: item),
+      CodeType.loop => LoopBlock(data: item),
       _ => RightCodeBlock(data: item)
     };
 
     return ListTile(
+      key: Key("$index"),
+      tileColor: Colors.white,
+      selectedColor: Colors.indigo,
       title: block,
+      trailing: IconButton(
+        onPressed: () {},
+        icon: Icon(Icons.delete_forever),
+      ),
     );
   }
 
@@ -63,12 +70,14 @@ class EditorScreen extends StatelessWidget {
                       );
                     },
                     onAccept: (item) {
-                      state.addItem(item, 0);
+                      state.addItem(item, null);
                     },
                   ),
                   onReorder: ((oldIndex, newIndex) {}),
-                  children:
-                      state.items.map(renderCodeBlock).toList(growable: false),
+                  children: [
+                    for (int i = 0; i < state.length; i++)
+                      renderCodeBlock(state.items[i], i),
+                  ],
                 ),
               ),
             ),
@@ -79,26 +88,28 @@ class EditorScreen extends StatelessWidget {
   }
 }
 
-class Adder extends StatelessWidget {
-  const Adder({super.key, required this.callback});
-  final void Function(String item)? callback;
+class LoopBlock extends StatelessWidget {
+  const LoopBlock({super.key, required this.data});
+  final CodeItem data;
+  static final ddItems = List.generate(100, (index) => index, growable: false);
+
+  static final _gap = SizedBox(width: 10);
 
   @override
   Widget build(BuildContext context) {
-    return DragTarget<String>(
-      builder: (context, candidateItems, rejectedItems) {
-        return Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Center(
-            child: Icon(Icons.add_box),
-          ),
-        );
-      },
-      onAccept: callback,
+    return Row(
+      children: [
+        SizedBox(width: 20.0 * data.indent),
+        const Text("Wiederhole", style: TextStyle(fontSize: 25)),
+        _gap,
+        CodeDropDown<int>(
+            listItems: ddItems,
+            callback: (ddVal) {
+              data.addValue(ddVal);
+            }),
+        _gap,
+        const Text("mal", style: TextStyle(fontSize: 25))
+      ],
     );
   }
 }
@@ -115,12 +126,9 @@ class RightCodeBlock extends StatelessWidget {
       mainAxisSize: MainAxisSize.max,
       children: [
         SizedBox(width: 20.0 * data.indent),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(data.text ?? "Fail"),
+        Text(
+          data.text ?? "Fail",
+          style: TextStyle(fontSize: 25),
         )
       ],
     );
@@ -133,7 +141,7 @@ class LeftCodeBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LongPressDraggable<CodeItem>(
+    return Draggable<CodeItem>(
       maxSimultaneousDrags: 1,
       data: item,
       feedback: Container(
@@ -165,6 +173,59 @@ class LeftCodeBlock extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class CodeDropDown<T> extends StatefulWidget {
+  const CodeDropDown(
+      {super.key, required this.listItems, required this.callback});
+  final List<T> listItems;
+  final void Function(T elem) callback;
+
+  @override
+  State<CodeDropDown> createState() => _CodeDropDown<T>();
+}
+
+class _CodeDropDown<T> extends State<CodeDropDown<T>> {
+  late T selected;
+
+  @override
+  void initState() {
+    selected = widget.listItems.first;
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<T>(
+      menuMaxHeight: 500,
+      value: selected,
+      icon: const Icon(Icons.arrow_downward),
+      elevation: 16,
+      style: const TextStyle(color: Colors.deepPurple),
+      underline: Container(
+        height: 2,
+        color: Colors.deepPurpleAccent,
+      ),
+      onChanged: (value) {
+        if (value != null && value != selected) {
+          widget.callback(value);
+          setState(() {
+            selected = value;
+          });
+        }
+      },
+      items: widget.listItems.map<DropdownMenuItem<T>>((value) {
+        return DropdownMenuItem<T>(
+          value: value,
+          child: Text("$value",
+              style: TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.w600,
+              )),
+        );
+      }).toList(growable: false),
     );
   }
 }
