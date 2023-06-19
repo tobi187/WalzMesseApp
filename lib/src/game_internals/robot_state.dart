@@ -12,8 +12,9 @@ final class RobotState extends ChangeNotifier {
   bool _isAnimationPlaying = false;
   bool _isReady = false;
   int currentStep = 0;
+  final _animationDuration = Duration(seconds: 1);
 
-  final steps = ["right", "right", "down", "right"];
+  final steps = ["forward", "forward", "right", "forward", "left", "forward"];
 
   bool get isReady => _isReady;
   bool get isAnimationPlaying => _isAnimationPlaying;
@@ -21,24 +22,30 @@ final class RobotState extends ChangeNotifier {
   double get height => _rPosition.height;
   double get xStart => _rPosition.posX;
   double get yStart => _rPosition.posY;
+  double get rotation => _rPosition.rotation;
+  Duration get animationDuration => _animationDuration;
 
   void step() {
     if (currentStep >= steps.length) {
       _isAnimationPlaying = false;
       return;
     }
+    Duration dur = Duration(milliseconds: 300);
     switch (steps[currentStep]) {
       case "right":
-        _rPosition.walkRight();
+        _rPosition.turnRight();
       case "left":
-        _rPosition.walkLeft();
-      case "up":
-        _rPosition.walkTop();
-      case "down":
-        _rPosition.walkBot();
+        _rPosition.turnLeft();
+      case "forward":
+        _rPosition.walk();
+        dur = Duration(seconds: 1);
+      default:
+        throw Exception(steps[currentStep]);
     }
-    currentStep++;
     notifyListeners();
+    currentStep++;
+    _logger.info("Current rotation: $rotation");
+    Future.delayed(dur, step);
   }
 
   void initPos(RenderObject? renderBox) {
@@ -60,6 +67,7 @@ class RobotPosition {
   double posY = 0;
   double height = 0;
   double width = 0;
+  double rotation = 0;
 
   void initPos(double? x, double? y, double h, double w) {
     posX = x ?? 0;
@@ -68,20 +76,33 @@ class RobotPosition {
     width = w;
   }
 
-  void walkRight() {
-    posX += width;
+  void turnLeft() {
+    rotation -= 90;
+    if (rotation < 0) {
+      rotation += 360;
+    }
   }
 
-  void walkLeft() {
-    posX -= width;
+  void turnRight() {
+    rotation += 90;
+    if (rotation > 300) {
+      rotation = 0;
+    }
   }
 
-  void walkTop() {
-    posX -= height;
-  }
-
-  void walkBot() {
-    posY += height;
+  void walk() {
+    switch (rotation) {
+      case 0:
+        posX += width;
+      case 90:
+        posY += height;
+      case 180:
+        posX -= width;
+      case 270:
+        posY -= width;
+      default:
+        throw Exception("Rotation unknown");
+    }
   }
 
   @override

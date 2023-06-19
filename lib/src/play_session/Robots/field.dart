@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:game_template/src/game_internals/robot_state.dart';
 import 'package:game_template/src/game_internals/robot_ui.dart';
@@ -52,12 +54,14 @@ class Field extends StatelessWidget {
                           height: robotState.height,
                           left: robotState.xStart,
                           top: robotState.yStart,
-                          duration: Duration(seconds: 1),
-                          child: RiveAnimation.asset(
-                            "assets/animations/tinkering.riv",
-                            fit: BoxFit.contain,
+                          duration: robotState.animationDuration,
+                          child: Transform.rotate(
+                            angle: robotState.rotation * pi / 180,
+                            child: RiveAnimation.asset(
+                              "assets/animations/tinkering.riv",
+                              fit: BoxFit.contain,
+                            ),
                           ),
-                          onEnd: () => robotState.step(),
                         )
                       : StatefulWrapper(
                           onInit: () {
