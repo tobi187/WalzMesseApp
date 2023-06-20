@@ -15,24 +15,6 @@ class EditorScreen extends StatelessWidget {
     CodeItem(type: CodeType.turnRight, text: "drehe rechts")
   ];
 
-  ListTile renderCodeBlock(CodeItem item, int index) {
-    final block = switch (item.type) {
-      CodeType.loop => LoopBlock(data: item),
-      _ => RightCodeBlock(data: item)
-    };
-
-    return ListTile(
-      key: Key("$index"),
-      tileColor: Colors.white,
-      selectedColor: Colors.indigo,
-      title: block,
-      trailing: IconButton(
-        onPressed: () {},
-        icon: Icon(Icons.delete_forever),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -46,6 +28,19 @@ class EditorScreen extends StatelessWidget {
                   .map((el) => LeftCodeBlock(item: el))
                   .toList(growable: false),
             ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FilledButton(
+                onPressed: () {
+                  final editorState = Provider.of<EditorState>(context);
+                  editorState.startAnimation();
+                },
+                child: const Text("Start"),
+              )
+            ],
           ),
           Expanded(
             flex: 7,
@@ -72,11 +67,28 @@ class EditorScreen extends StatelessWidget {
                     onAccept: (item) {
                       state.addItem(item, null);
                     },
+                    onWillAccept: (_) => !state.isAnimating,
                   ),
                   onReorder: ((oldIndex, newIndex) {}),
                   children: [
                     for (int i = 0; i < state.length; i++)
-                      renderCodeBlock(state.items[i], i),
+                      ListTile(
+                        title: switch (state.items[i].type) {
+                          CodeType.loop => LoopBlock(
+                              data: state.items[i],
+                              callback: (dd) => state.addItem(dd, "$i"),
+                              isAccepting: state.isAnimating,
+                            ),
+                          _ => RightCodeBlock(data: state.items[i])
+                        },
+                        key: Key("$i"),
+                        tileColor: Colors.white,
+                        selectedColor: Colors.indigo,
+                        trailing: IconButton(
+                          onPressed: () => state.delItem(i),
+                          icon: Icon(Icons.delete_forever),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -89,27 +101,36 @@ class EditorScreen extends StatelessWidget {
 }
 
 class LoopBlock extends StatelessWidget {
-  const LoopBlock({super.key, required this.data});
+  const LoopBlock(
+      {super.key,
+      required this.data,
+      required this.callback,
+      this.isAccepting = true});
+  final bool isAccepting;
   final CodeItem data;
-  static final ddItems = List.generate(100, (index) => index, growable: false);
+  final void Function(CodeItem)? callback;
+  static final ddItems = List.generate(50, (index) => index, growable: false);
 
   static final _gap = SizedBox(width: 10);
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(width: 20.0 * data.indent),
-        const Text("Wiederhole", style: TextStyle(fontSize: 25)),
-        _gap,
-        CodeDropDown<int>(
-            listItems: ddItems,
-            callback: (ddVal) {
-              data.addValue(ddVal);
-            }),
-        _gap,
-        const Text("mal", style: TextStyle(fontSize: 25))
-      ],
+    return DragTarget<CodeItem>(
+      builder: (context, candidateItems, rejectedItems) => Row(
+        children: [
+          SizedBox(width: 20.0 * data.indent),
+          const Text("Wiederhole", style: TextStyle(fontSize: 25)),
+          _gap,
+          CodeDropDown<int>(
+              listItems: ddItems,
+              callback: (ddVal) {
+                data.addValue(ddVal);
+              }),
+          _gap,
+          const Text("mal", style: TextStyle(fontSize: 25))
+        ],
+      ),
+      onAccept: callback,
     );
   }
 }
