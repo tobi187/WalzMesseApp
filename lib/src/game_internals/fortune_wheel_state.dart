@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 /// the value of [progress] reaches [goal].
 class FortuneWheelState extends ChangeNotifier {
   final VoidCallback onWin;
-
+  
   FortuneWheelState({required this.onWin});
 
   bool _isOver = false;

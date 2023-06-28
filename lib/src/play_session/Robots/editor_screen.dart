@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_template/src/game_internals/editor_state.dart';
+import 'package:game_template/src/game_internals/full_game_state.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 
@@ -17,6 +18,8 @@ class EditorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fullState = context.watch<FullGameState>();
+
     return ChangeNotifierProvider(
       create: (context) => EditorState(),
       child: Row(
@@ -28,19 +31,6 @@ class EditorScreen extends StatelessWidget {
                   .map((el) => LeftCodeBlock(item: el))
                   .toList(growable: false),
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FilledButton(
-                onPressed: () {
-                  final editorState = Provider.of<EditorState>(context);
-                  editorState.startAnimation();
-                },
-                child: const Text("Start"),
-              )
-            ],
           ),
           Expanded(
             flex: 7,
@@ -136,17 +126,19 @@ class LoopBlock extends StatelessWidget {
 }
 
 class RightCodeBlock extends StatelessWidget {
-  const RightCodeBlock({super.key, required this.data});
+  RightCodeBlock({super.key, required this.data});
   final CodeItem data;
+  final logger = Logger("R___CB");
 
   @override
   Widget build(BuildContext context) {
+    logger.info("${data.indent} - ${data.text}");
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.max,
       children: [
-        SizedBox(width: 20.0 * data.indent),
+        SizedBox(width: 50.0 * data.indent),
         Text(
           data.text ?? "Fail",
           style: TextStyle(fontSize: 25),

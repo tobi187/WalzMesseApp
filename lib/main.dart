@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_template/src/level_selection/robot_levels.dart';
 import 'package:game_template/src/play_session/Robots/robots_screen.dart';
 import 'package:game_template/src/play_session/fortune_wheel_screen.dart';
 import 'package:game_template/src/settings/admin/admin_screen.dart';
@@ -88,9 +89,30 @@ class MyApp extends StatelessWidget {
               path: "playRobots",
               pageBuilder: (context, state) => buildMyTransition(
                 key: ValueKey("playRobots"),
-                child: RobotScreen(),
+                child: const LevelSelectionScreen(
+                  key: Key("level selection"),
+                ),
                 color: context.watch<Palette>().backgroundLevelSelection,
               ),
+              routes: [
+                GoRoute(
+                    path: 'robotSession/:level',
+                    pageBuilder: (context, state) {
+                      final levelNumber =
+                          int.parse(state.pathParameters['level']!);
+                      final level = robotLevels
+                          .singleWhere((e) => e.number == levelNumber);
+                      return buildMyTransition<void>(
+                        key: ValueKey('level'),
+                        child: RobotScreen(
+                          level: level,
+                          key: const Key('RobotGame'),
+                        ),
+                        color: context.watch<Palette>().backgroundPlaySession,
+                      );
+                    },
+                  ),
+              ]
             ),
             GoRoute(
                 path: 'play',

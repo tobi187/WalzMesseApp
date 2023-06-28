@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:game_template/src/game_internals/editor_state.dart';
 import 'package:logging/logging.dart';
 
 final class RobotState extends ChangeNotifier {
-  static double borderWidth = 2;
-  static double stAlign = -1;
-
   final _logger = Logger("RobotState");
 
   final _rPosition = RobotPosition();
 
   bool _isAnimationPlaying = false;
   bool _isReady = false;
-  int currentStep = 0;
   final _animationDuration = Duration(seconds: 1);
+  final List<String> borders;
+  int cStep = 0;
+  int cIndent = 0;
+  bool hasError = false;
+  VoidCallback onWin;
+  VoidCallback onFail;
 
-  final steps = ["forward", "forward", "right", "forward", "left", "forward"];
+  RobotState(
+      {required this.borders, required this.onWin, required this.onFail});
+  List<CodeItem> steps = [];
 
   bool get isReady => _isReady;
   bool get isAnimationPlaying => _isAnimationPlaying;
@@ -25,27 +30,81 @@ final class RobotState extends ChangeNotifier {
   double get rotation => _rPosition.rotation;
   Duration get animationDuration => _animationDuration;
 
-  void step() {
-    if (currentStep >= steps.length) {
-      _isAnimationPlaying = false;
-      return;
-    }
+  Future<void> step(CodeType instruction) async {
     Duration dur = Duration(milliseconds: 300);
-    switch (steps[currentStep]) {
-      case "right":
+    switch (instruction) {
+      case CodeType.turnRight:
         _rPosition.turnRight();
-      case "left":
+      case CodeType.turnLeft:
         _rPosition.turnLeft();
-      case "forward":
+      case CodeType.walk:
+        if (!canStep()) {
+          hasError = true;
+          return;
+        }
         _rPosition.walk();
         dur = Duration(seconds: 1);
       default:
-        throw Exception(steps[currentStep]);
+        throw Exception("Unexpected CodeType");
     }
     notifyListeners();
-    currentStep++;
-    _logger.info("Current rotation: $rotation");
-    Future.delayed(dur, step);
+    cStep++;
+    await Future<void>.delayed(dur);
+  }
+
+  Future<void> startAnimation(List<CodeItem> items) async {
+    _isAnimationPlaying = true;
+    steps = items;
+
+    while (cStep < steps.length) {
+      if (hasError) return onFail();
+      if (steps[cStep].type == CodeType.loop) {
+        await doLoop();
+      } else {
+        await step(steps[cStep].type);
+      }
+    }
+  }
+
+  void cleanUp() {
+    _isAnimationPlaying = false;
+    cStep = 0;
+    cIndent = 0;
+    hasError = false;
+  }
+
+  void fail() {
+    cleanUp();
+    onFail();
+  }
+
+  void win() {
+    cleanUp();
+    onWin();
+  }
+
+  Future<void> doLoop() async {
+    cIndent++;
+    cStep++;
+    while (cStep < steps.length && cIndent == steps[cStep].indent) {
+      if (hasError) return;
+      if (steps[cStep].type == CodeType.loop) {
+        await doLoop();
+      } else {
+        await step(steps[cStep].type);
+      }
+    }
+  }
+
+  bool canStep() {
+    //r = 1, l = -1, dir 0 -> r, 90 -> b, 180 -> l, 270 -> t
+    return switch (_rPosition.rotation) {
+      0 => !borders[_rPosition.position].contains("r"),
+      90 => !borders[_rPosition.position].contains("b"),
+      180 => !borders[_rPosition.position].contains("l"),
+      270 => !borders[_rPosition.position].contains("t"),
+      _ => throw Exception("Unknown Rotation")
+    };
   }
 
   void initPos(RenderObject? renderBox) {
@@ -58,7 +117,6 @@ final class RobotState extends ChangeNotifier {
     _logger.info(_rPosition.toString());
     _isReady = true;
     notifyListeners();
-    Future.delayed(Duration(seconds: 3), step);
   }
 }
 
@@ -68,7 +126,8 @@ class RobotPosition {
   double height = 0;
   double width = 0;
   double rotation = 0;
-
+  int position = 0;
+  // spielfeld 5 rows 8 cols
   void initPos(double? x, double? y, double h, double w) {
     posX = x ?? 0;
     posY = y ?? 10;
@@ -94,12 +153,16 @@ class RobotPosition {
     switch (rotation) {
       case 0:
         posX += width;
+        position++;
       case 90:
         posY += height;
+        position += 8;
       case 180:
         posX -= width;
+        position--;
       case 270:
         posY -= width;
+        position -= 8;
       default:
         throw Exception("Rotation unknown");
     }

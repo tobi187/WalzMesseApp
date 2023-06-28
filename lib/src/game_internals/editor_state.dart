@@ -8,13 +8,15 @@ class EditorState extends ChangeNotifier {
   List<CodeItem> get items => _items;
   bool get isAnimating => _isAnimating;
 
-  void startAnimation() {
+  List<CodeItem> startAnimation() {
     _isAnimating = true;
+    notifyListeners();
+    return _items;
   }
 
   void addItem(CodeItem item, String? callerIndex) {
     if (callerIndex == null) {
-      _items.add(item);
+      _items.add(item.createCopy());
     } else {
       var index = int.parse(callerIndex);
       var callerItem = _items[index];
@@ -22,12 +24,15 @@ class EditorState extends ChangeNotifier {
       for (int i = index + 1; i < _items.length; i++) {
         if (callerItem.indent == _items[i].indent) {
           item.indent = callerItem.indent + 1;
-          _items.insert(i, item);
+          _items.insert(i, item.createCopy());
           inserted = true;
           break;
         }
       }
-      if (!inserted) _items.add(item);
+      if (!inserted) {
+        item.indent = callerItem.indent + 1;
+        _items.add(item.createCopy());
+      }
     }
     notifyListeners();
   }
@@ -45,6 +50,7 @@ class EditorState extends ChangeNotifier {
     } else {
       _items.removeAt(index);
     }
+    notifyListeners();
   }
 }
 
@@ -54,12 +60,8 @@ class CodeItem {
   final String? text;
   int indent;
   final CodeType type;
-  int _childCount = 0;
   int? _value;
 
-  int get childCount => _childCount;
-  void addChild() => _childCount++;
-  void removeChild() => _childCount--;
   void addValue(int val) => _value = val;
 
   CodeItem({required this.type, this.text, this.indent = 0});
@@ -67,4 +69,6 @@ class CodeItem {
   CodeItem.adder(this.indent)
       : text = null,
         type = CodeType.adder;
+
+  CodeItem createCopy() => CodeItem(type: type, text: text, indent: indent);
 }
