@@ -63,6 +63,7 @@ class CodeItem {
   int? _value;
 
   void addValue(int val) => _value = val;
+  int get value => _value ?? -1;
 
   CodeItem({required this.type, this.text, this.indent = 0});
 

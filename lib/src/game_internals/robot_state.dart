@@ -52,6 +52,17 @@ final class RobotState extends ChangeNotifier {
     await Future<void>.delayed(dur);
   }
 
+  List<CodeItem> skipLoopSteps() {
+    List<CodeItem> l = [];
+    for (int i = cStep; i < steps.length; i++) {
+      if (steps[i].indent == steps[cStep].indent + 1 &&
+          steps[i].type != CodeType.loop) {
+        l.add(steps[i]);
+      }
+    }
+    return l;
+  }
+
   Future<void> startAnimation(List<CodeItem> items) async {
     _isAnimationPlaying = true;
     steps = items;
@@ -71,6 +82,9 @@ final class RobotState extends ChangeNotifier {
     cStep = 0;
     cIndent = 0;
     hasError = false;
+    steps = [];
+    _rPosition.resetPos();
+    notifyListeners();
   }
 
   void fail() {
@@ -84,14 +98,29 @@ final class RobotState extends ChangeNotifier {
   }
 
   Future<void> doLoop() async {
-    cIndent++;
+    final loopSteps = skipLoopSteps();
+    int cIter = 0;
+    int lStep = cStep;
     cStep++;
-    while (cStep < steps.length && cIndent == steps[cStep].indent) {
+
+    if (steps[lStep].value == -1) {
+      hasError = true;
+      return;
+    }
+
+    while (steps[cIter].indent > steps[lStep].indent) {
       if (hasError) return;
       if (steps[cStep].type == CodeType.loop) {
         await doLoop();
       } else {
         await step(steps[cStep].type);
+      }
+      cStep++;
+    }
+
+    for (int i = 1; i < steps[lStep].value; i++) {
+      for (var el in loopSteps) {
+        await step(el.type);
       }
     }
   }
@@ -133,6 +162,12 @@ class RobotPosition {
     posY = y ?? 10;
     height = h;
     width = w;
+  }
+
+  void resetPos() {
+    rotation = 0;
+    posX = 0;
+    posY = 10;
   }
 
   void turnLeft() {

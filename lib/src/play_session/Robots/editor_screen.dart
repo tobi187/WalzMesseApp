@@ -18,74 +18,69 @@ class EditorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fullState = context.watch<FullGameState>();
-
-    return ChangeNotifierProvider(
-      create: (context) => EditorState(),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 4,
-            child: ListView(
-              children: texts
-                  .map((el) => LeftCodeBlock(item: el))
-                  .toList(growable: false),
-            ),
+    return Row(
+      children: [
+        Expanded(
+          flex: 4,
+          child: ListView(
+            children: texts
+                .map((el) => LeftCodeBlock(item: el))
+                .toList(growable: false),
           ),
-          Expanded(
-            flex: 7,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.tealAccent.shade100,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Consumer<EditorState>(
-                builder: (context, state, child) => ReorderableListView(
-                  header: DragTarget<CodeItem>(
-                    builder: (context, candidateItems, rejectedItems) {
-                      return Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Icon(Icons.add_box, size: 50),
-                        ),
-                      );
-                    },
-                    onAccept: (item) {
-                      state.addItem(item, null);
-                    },
-                    onWillAccept: (_) => !state.isAnimating,
-                  ),
-                  onReorder: ((oldIndex, newIndex) {}),
-                  children: [
-                    for (int i = 0; i < state.length; i++)
-                      ListTile(
-                        title: switch (state.items[i].type) {
-                          CodeType.loop => LoopBlock(
-                              data: state.items[i],
-                              callback: (dd) => state.addItem(dd, "$i"),
-                              isAccepting: state.isAnimating,
-                            ),
-                          _ => RightCodeBlock(data: state.items[i])
-                        },
-                        key: Key("$i"),
-                        tileColor: Colors.white,
-                        selectedColor: Colors.indigo,
-                        trailing: IconButton(
-                          onPressed: () => state.delItem(i),
-                          icon: Icon(Icons.delete_forever),
-                        ),
+        ),
+        Expanded(
+          flex: 7,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.tealAccent.shade100,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Consumer<EditorState>(
+              builder: (context, state, child) => ReorderableListView(
+                header: DragTarget<CodeItem>(
+                  builder: (context, candidateItems, rejectedItems) {
+                    return Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                  ],
+                      child: Center(
+                        child: Icon(Icons.add_box, size: 50),
+                      ),
+                    );
+                  },
+                  onAccept: (item) {
+                    state.addItem(item, null);
+                  },
+                  onWillAccept: (_) => !state.isAnimating,
                 ),
+                onReorder: ((oldIndex, newIndex) {}),
+                children: [
+                  for (int i = 0; i < state.length; i++)
+                    ListTile(
+                      title: switch (state.items[i].type) {
+                        CodeType.loop => LoopBlock(
+                            data: state.items[i],
+                            callback: (dd) => state.addItem(dd, "$i"),
+                            isAccepting: state.isAnimating,
+                          ),
+                        _ => RightCodeBlock(data: state.items[i])
+                      },
+                      key: Key("$i"),
+                      tileColor: Colors.white,
+                      selectedColor: Colors.indigo,
+                      trailing: IconButton(
+                        onPressed: () => state.delItem(i),
+                        icon: Icon(Icons.delete_forever),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
