@@ -160,7 +160,8 @@ class AudioController {
         if (!_settings!.muted.value && _settings!.musicOn.value) {
           _resumeMusic();
         }
-      case AppLifecycleState.inactive:
+      //case AppLifecycleState.inactive:
+      default:
         // No need to react to this state change.
         break;
     }

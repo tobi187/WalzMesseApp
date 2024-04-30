@@ -17,39 +17,40 @@ class EditorState extends ChangeNotifier {
   void addItem(CodeItem item, String? callerIndex) {
     if (callerIndex == null) {
       _items.add(item.createCopy());
-    } else {
-      var index = int.parse(callerIndex);
-      var callerItem = _items[index];
-      bool inserted = false;
-      for (int i = index + 1; i < _items.length; i++) {
-        if (callerItem.indent == _items[i].indent) {
-          item.indent = callerItem.indent + 1;
-          _items.insert(i, item.createCopy());
-          inserted = true;
-          break;
-        }
-      }
-      if (!inserted) {
-        item.indent = callerItem.indent + 1;
-        _items.add(item.createCopy());
+      notifyListeners();
+      return;
+    }
+
+    var index = int.parse(callerIndex);
+    var callerIndent = _items[index].indent;
+    for (int i = index + 1; i < _items.length; i++) {
+      if (callerIndent == _items[i].indent) {
+        item.indent = callerIndent + 1;
+        _items.insert(i, item.createCopy());
+        break;
       }
     }
+
     notifyListeners();
   }
 
   void delItem(int index) {
-    if (_items[index].type == CodeType.loop) {
-      int end = _items.length - 1;
-      for (int i = index + 1; i < items.length; i++) {
-        if (_items[i].indent != _items[index].indent) {
-          end = i;
-          break;
-        }
-      }
-      _items.removeRange(index, ++end);
-    } else {
+    if (_items[index].type != CodeType.loop) {
       _items.removeAt(index);
+      notifyListeners();
+      return;
     }
+
+    int end = _items.length;
+    int currIndent = _items[index].indent;
+    for (int i = index + 1; i < items.length; i++) {
+      if (_items[i].indent < currIndent) {
+        end = i;
+        break;
+      }
+    }
+
+    _items.removeRange(index, end);
     notifyListeners();
   }
 }
@@ -60,10 +61,10 @@ class CodeItem {
   final String? text;
   int indent;
   final CodeType type;
-  int? _value;
+  int _value = 0;
 
-  void addValue(int val) => _value = val;
-  int get value => _value ?? -1;
+  void setValue(int val) => _value = val;
+  int get value => _value;
 
   CodeItem({required this.type, this.text, this.indent = 0});
 

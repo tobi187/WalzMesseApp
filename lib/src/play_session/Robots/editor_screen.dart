@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:game_template/src/game_internals/editor_state.dart';
-import 'package:game_template/src/game_internals/full_game_state.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 
@@ -50,10 +49,10 @@ class EditorScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  onAccept: (item) {
-                    state.addItem(item, null);
+                  onAcceptWithDetails: (itemDetails) {
+                    state.addItem(itemDetails.data, null);
                   },
-                  onWillAccept: (_) => !state.isAnimating,
+                  onWillAcceptWithDetails: (_) => !state.isAnimating,
                 ),
                 onReorder: ((oldIndex, newIndex) {}),
                 children: [
@@ -62,7 +61,7 @@ class EditorScreen extends StatelessWidget {
                       title: switch (state.items[i].type) {
                         CodeType.loop => LoopBlock(
                             data: state.items[i],
-                            callback: (dd) => state.addItem(dd, "$i"),
+                            callback: (dd) => state.addItem(dd.data, "$i"),
                             isAccepting: state.isAnimating,
                           ),
                         _ => RightCodeBlock(data: state.items[i])
@@ -93,7 +92,7 @@ class LoopBlock extends StatelessWidget {
       this.isAccepting = true});
   final bool isAccepting;
   final CodeItem data;
-  final void Function(CodeItem)? callback;
+  final void Function(DragTargetDetails<CodeItem>)? callback;
   static final ddItems = List.generate(50, (index) => index, growable: false);
 
   static final _gap = SizedBox(width: 10);
@@ -109,13 +108,13 @@ class LoopBlock extends StatelessWidget {
           CodeDropDown<int>(
               listItems: ddItems,
               callback: (ddVal) {
-                data.addValue(ddVal);
+                data.setValue(ddVal);
               }),
           _gap,
           const Text("mal", style: TextStyle(fontSize: 25))
         ],
       ),
-      onAccept: callback,
+      onAcceptWithDetails: callback,
     );
   }
 }

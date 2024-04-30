@@ -1,3 +1,6 @@
+import 'dart:collection';
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:game_template/src/game_internals/editor_state.dart';
 import 'package:logging/logging.dart';
@@ -146,6 +149,34 @@ final class RobotState extends ChangeNotifier {
     _logger.info(_rPosition.toString());
     _isReady = true;
     notifyListeners();
+  }
+}
+
+class Interpreter {
+  final List<CodeItem> steps;
+  final HashMap<CodeItem, List<CodeItem>> kids = HashMap();
+  final HashMap<CodeItem, int> goBack = HashMap();
+  final List<CodeItem> _base = List.empty(growable: true);
+
+  Interpreter({required this.steps});
+
+  void prepare() {
+    CodeItem? curr;
+    for (var step in steps) {
+      if (step.indent != curr?.indent) {
+        
+      }
+      if (step.indent == 0) {
+        _base.add(step);
+      } else {
+        kids[curr]!.add(step);
+      }
+
+      if (step.type == CodeType.loop) {
+        curr = step;
+        kids[curr] = List.empty(growable: true);
+      }
+    }
   }
 }
 
