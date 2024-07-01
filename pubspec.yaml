@@ -26,6 +26,7 @@ dependencies:
   games_services: ^4.0.1  # Achievements and leaderboards
   flutter_fortune_wheel: ^1.2.1
   rive: ^0.13.2
+  confetti: ^0.7.0
 
 dev_dependencies:
   flutter_test:

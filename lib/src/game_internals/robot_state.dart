@@ -1,5 +1,4 @@
 import 'dart:collection';
-import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:game_template/src/game_internals/editor_state.dart';
@@ -53,6 +52,9 @@ final class RobotState extends ChangeNotifier {
     }
     notifyListeners();
     cStep++;
+
+    if (_rPosition.position >= borders.length) hasError = true;
+
     await Future<void>.delayed(dur);
   }
 
@@ -67,10 +69,15 @@ final class RobotState extends ChangeNotifier {
     return l;
   }
 
-  Future<void> reset() async {
+  void reset() {
     _isAnimationPlaying = true;
+    cStep = 0;
+    cIndent = 0;
+    hasError = false;
     _rPosition.resetPos();
     _isAnimationPlaying = false;
+    steps = [];
+    notifyListeners();
   }
 
   // wiederhole 3x -> CodeType.loop; indent 0
@@ -84,21 +91,28 @@ final class RobotState extends ChangeNotifier {
     var baseLevelItems = items.where((el) => el.indent == 0).toList();
     for (var i = 0; i < baseLevelItems.length; i++) {
       if (baseLevelItems[i].type == CodeType.loop) {
-        var itemsInLoop =
-            baseLevelItems.sublist(i + 1).takeWhile((el) => el.indent > 0);
+        var start = items.indexOf(baseLevelItems[i]) + 1;
+        var itemsInLoop = items.sublist(start).takeWhile((el) => el.indent > 0);
+
         await runLoop(itemsInLoop.toList(), baseLevelItems[i].value);
       } else {
         await step(baseLevelItems[i].type);
       }
-      if (hasError) return onFail();
+      if (hasError) {
+        fail();
+        return;
+      }
     }
   }
 
   Future<void> runLoop(List<CodeItem> itemsInLoop, int value) async {
     for (var i = 0; i < value; i++) {
       for (var k = 0; k < itemsInLoop.length; k++) {
-        await step(itemsInLoop[i].type);
-        if (hasError) return onFail();
+        await step(itemsInLoop[k].type);
+        if (hasError) {
+          fail();
+          return;
+        }
       }
     }
   }
@@ -131,12 +145,13 @@ final class RobotState extends ChangeNotifier {
   }
 
   void fail() {
-    cleanUp();
+    if (_rPosition.position >= borders.length) return win();
+    reset();
     onFail();
   }
 
   void win() {
-    cleanUp();
+    reset();
     onWin();
   }
 
