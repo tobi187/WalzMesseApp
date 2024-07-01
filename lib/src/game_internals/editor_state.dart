@@ -14,8 +14,15 @@ class EditorState extends ChangeNotifier {
     return _items;
   }
 
+  void reset() {
+    _isAnimating = false;
+  }
+
   void addItem(CodeItem item, String? callerIndex) {
     if (callerIndex == null) {
+      if (item.indent != 0) {
+        // throw Exception("I sink this should be immer 0");
+      }
       _items.add(item.createCopy());
       notifyListeners();
       return;
