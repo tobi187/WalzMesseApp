@@ -37,23 +37,29 @@ class EditorScreen extends StatelessWidget {
             child: Consumer<EditorState>(
               builder: (context, state, child) => ReorderableListView(
                 header: DragTarget<CodeItem>(
-                  builder: (context, candidateItems, rejectedItems) {
-                    return Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Icon(Icons.add_box, size: 50),
-                      ),
-                    );
-                  },
-                  onAcceptWithDetails: (itemDetails) {
-                    state.addItem(itemDetails.data, null);
-                  },
-                  onWillAcceptWithDetails: (_) => !state.isAnimating,
-                ),
+                    builder: (context, candidateItems, rejectedItems) {
+                  return Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Icon(Icons.add_box, size: 50),
+                    ),
+                  );
+                }, onAcceptWithDetails: (itemDetails) {
+                  _logger.info(
+                      "Drop accepted: Type ${itemDetails.data.type} indent: ${itemDetails.data.indent}");
+                  state.addItem(itemDetails.data, null);
+                }, onWillAcceptWithDetails: (data) {
+                  _logger.info(
+                      "[On Enter]: ${data.data.type.name} is entering; Animating: ${state.isAnimating}");
+                  return !state.isAnimating;
+                }, onLeave: (data) {
+                  _logger
+                      .info("[On Leave]: ${data?.type.name ?? "a"} is leaving");
+                }),
                 onReorder: ((oldIndex, newIndex) {}),
                 children: [
                   for (int i = 0; i < state.length; i++)
@@ -102,7 +108,7 @@ class LoopBlock extends StatelessWidget {
     return DragTarget<CodeItem>(
       builder: (context, candidateItems, rejectedItems) => Row(
         children: [
-          SizedBox(width: 20.0 * data.indent),
+          SizedBox(width: 50.0 * data.indent),
           const Text("Wiederhole", style: TextStyle(fontSize: 25)),
           _gap,
           CodeDropDown<int>(

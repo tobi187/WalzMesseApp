@@ -13,6 +13,7 @@ final class RobotState extends ChangeNotifier {
   bool _isAnimationPlaying = false;
   bool _isReady = false;
   final _animationDuration = Duration(seconds: 1);
+  // tblr -> von links nach recht -> dann oben nach unten
   final List<String> borders;
   int cStep = 0;
   int cIndent = 0;
@@ -66,9 +67,48 @@ final class RobotState extends ChangeNotifier {
     return l;
   }
 
+  Future<void> reset() async {
+    _isAnimationPlaying = true;
+    _rPosition.resetPos();
+    _isAnimationPlaying = false;
+  }
+
+  // wiederhole 3x -> CodeType.loop; indent 0
+  //    lauf rechts -> CodeType.walk; indent 1
+  //    wiederhole 4x -> CodeType.loop; indent 1
+  //      drehe links  -> CodeType.dreheleft; indent 2
+
+  Future<void> startAnimationNew(List<CodeItem> items) async {
+    _isAnimationPlaying = true;
+    steps = items;
+    var baseLevelItems = items.where((el) => el.indent == 0).toList();
+    for (var i = 0; i < baseLevelItems.length; i++) {
+      if (baseLevelItems[i].type == CodeType.loop) {
+        var itemsInLoop =
+            baseLevelItems.sublist(i + 1).takeWhile((el) => el.indent > 0);
+        await runLoop(itemsInLoop.toList(), baseLevelItems[i].value);
+      } else {
+        await step(baseLevelItems[i].type);
+      }
+      if (hasError) return onFail();
+    }
+  }
+
+  Future<void> runLoop(List<CodeItem> itemsInLoop, int value) async {
+    for (var i = 0; i < value; i++) {
+      for (var k = 0; k < itemsInLoop.length; k++) {
+        await step(itemsInLoop[i].type);
+        if (hasError) return onFail();
+      }
+    }
+  }
+
   Future<void> startAnimation(List<CodeItem> items) async {
     _isAnimationPlaying = true;
     steps = items;
+
+    await startAnimationNew(items);
+    return;
 
     while (cStep < steps.length) {
       if (hasError) return onFail();
@@ -163,9 +203,7 @@ class Interpreter {
   void prepare() {
     CodeItem? curr;
     for (var step in steps) {
-      if (step.indent != curr?.indent) {
-        
-      }
+      if (step.indent != curr?.indent) {}
       if (step.indent == 0) {
         _base.add(step);
       } else {
@@ -199,6 +237,7 @@ class RobotPosition {
     rotation = 0;
     posX = 0;
     posY = 10;
+    position = 0;
   }
 
   void turnLeft() {

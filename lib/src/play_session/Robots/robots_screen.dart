@@ -48,6 +48,13 @@ class RobotScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     FilledButton(
+                      onPressed: () {
+                        final rbState = context.read<RobotState>();
+                        rbState.reset();
+                      },
+                      child: const Text("Abc"),
+                    ),
+                    FilledButton(
                       onPressed: () async {
                         final edState = context.read<EditorState>();
                         final rbState = context.read<RobotState>();
