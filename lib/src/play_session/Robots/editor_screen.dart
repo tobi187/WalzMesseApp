@@ -121,6 +121,7 @@ class LoopBlock extends StatelessWidget {
         ],
       ),
       onAcceptWithDetails: callback,
+      onWillAcceptWithDetails: (item) => item.data.type != CodeType.loop,
     );
   }
 }
@@ -156,7 +157,7 @@ class LeftCodeBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return Draggable<CodeItem>(
       maxSimultaneousDrags: 1,
-      data: item,
+      data: item.createCopy(),
       feedback: Container(
         decoration: BoxDecoration(
           color: Colors.cyan,

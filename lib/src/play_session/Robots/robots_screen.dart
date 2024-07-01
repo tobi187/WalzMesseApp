@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:game_template/src/game_internals/editor_state.dart';
 import 'package:game_template/src/game_internals/robot_state.dart';
 import 'package:game_template/src/level_selection/robot_levels.dart';
@@ -10,10 +11,15 @@ import 'package:provider/provider.dart';
 
 import '../../style/palette.dart';
 
-class RobotScreen extends StatelessWidget {
-  RobotScreen({super.key, required this.level});
+class RobotScreen extends StatefulWidget {
+  const RobotScreen({super.key, required this.level});
   final RobotGameLevel level;
 
+  @override
+  State<RobotScreen> createState() => _RobotScreenState();
+}
+
+class _RobotScreenState extends State<RobotScreen> {
   bool _duringCelebration = false;
 
   @override
@@ -25,10 +31,12 @@ class RobotScreen extends StatelessWidget {
         ChangeNotifierProvider<EditorState>(create: (_) => EditorState()),
         ChangeNotifierProvider<RobotState>(
             create: (_) => RobotState(
-                  borders: level.borders,
+                  borders: widget.level.borders,
                   onWin: () {
                     //GoRouter.of(context).pop();
-                    _duringCelebration = true;
+                    setState(() {
+                      _duringCelebration = true;
+                    });
                   },
                   onFail: () {
                     //GoRouter.of(context).pop();
@@ -47,7 +55,7 @@ class RobotScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Field(
-                              level: level,
+                              level: widget.level,
                             ),
                           ),
                           Row(
@@ -85,8 +93,25 @@ class RobotScreen extends StatelessWidget {
                         child: Visibility(
                           visible: _duringCelebration,
                           child: IgnorePointer(
-                            child: Confetti(
-                              isStopped: !_duringCelebration,
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: FilledButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _duringCelebration = false;
+                                      });
+                                    },
+                                    child: const Text("afskl"),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 9,
+                                  child: Confetti(
+                                    isStopped: !_duringCelebration,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
